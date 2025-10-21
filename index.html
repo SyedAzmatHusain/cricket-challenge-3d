@@ -8,22 +8,18 @@
         body {
             margin: 0;
             overflow: hidden;
-            background: linear-gradient(to bottom, #87CEEB 0%, #98D8C8 100%);
+            background: #000;
             font-family: Arial, sans-serif;
         }
-        #game-container {
-            width: 100vw;
-            height: 100vh;
-        }
-        #loading {
+        #info {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            top: 10px;
+            left: 10px;
             color: white;
-            font-size: 24px;
-            text-align: center;
-            z-index: 1000;
+            background: rgba(0,0,0,0.7);
+            padding: 15px;
+            border-radius: 5px;
+            z-index: 100;
         }
         canvas {
             display: block;
@@ -31,19 +27,13 @@
     </style>
 </head>
 <body>
-    <div id="loading">
-        <h1>Cricket Challenge 3D</h1>
-        <p>Loading game...</p>
+    <div id="info">
+        <h2>Cricket Challenge 3D</h2>
+        <p>Loading scene...</p>
+        <p id="status">Initializing...</p>
     </div>
-    <div id="game-container"></div>
     
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
-        }
-    }
-    </script>
-    <script type="module" src="game.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="game.js"></script>
 </body>
 </html>
