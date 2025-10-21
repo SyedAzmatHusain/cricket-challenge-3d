@@ -1,3 +1,5 @@
+import * as THREE from 'three';
+
 // Cricket Challenge 3D - Game Engine
 // Phase 1: Basic 3D Scene Setup
 
