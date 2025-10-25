@@ -194,30 +194,41 @@ function swingBat() {
     batRotation = 0;
     console.log('Bat swung!');
     
-    // Reset swing after animation
+    // Reset swing after animation - LONGER SWING TIME
     setTimeout(() => {
         isSwinging = false;
-    }, 300);
+    }, 800);
 }
-
-function bowlBall() {
+    function bowlBall() {
     if (isBowling) return;
     
     isBowling = true;
     balls++;
     
-    // Random line and length
-    const randomX = (Math.random() - 0.5) * 0.8;
-    const randomSpeed = 0.4 + Math.random() * 0.3;
+    document.getElementById('status').innerHTML = 
+        `<h2>Cricket Challenge 3D</h2>
+        <p>Score: ${score} runs | Balls: ${balls}</p>
+        <p>⚠️ GET READY... Ball coming in 2 seconds!</p>`;
     
-    ballVelocity.x = randomX * 0.1;
-    ballVelocity.y = -0.02;
-    ballVelocity.z = -randomSpeed;
-    
-    bowler.position.z = 6;
-    
-    updateStatus();
-    console.log('Ball bowled!');
+    // Wait 2 seconds before bowling
+    setTimeout(() => {
+        // Random line and length
+        const randomX = (Math.random() - 0.5) * 0.8;
+        const randomSpeed = 0.35 + Math.random() * 0.25;
+        
+        ballVelocity.x = randomX * 0.1;
+        ballVelocity.y = -0.02;
+        ballVelocity.z = -randomSpeed;
+        
+        bowler.position.z = 6;
+        
+        document.getElementById('status').innerHTML = 
+            `<h2>Cricket Challenge 3D</h2>
+            <p>Score: ${score} runs | Balls: ${balls}</p>
+            <p>🏏 SWIPE UP NOW TO HIT!</p>`;
+        
+        console.log('Ball bowled!');
+    }, 2000); // 2 second delay
 }
 
 function updateBall() {
@@ -228,11 +239,11 @@ function updateBall() {
     ball.position.y += ballVelocity.y;
     ball.position.z += ballVelocity.z;
     
-    // Check for bat collision
+    // Check for bat collision - EASIER TIMING
     if (isSwinging && 
-        ball.position.z < -7 && ball.position.z > -8.5 &&
-        Math.abs(ball.position.x - bat.position.x) < 0.8 &&
-        Math.abs(ball.position.y - bat.position.y) < 0.6) {
+        ball.position.z < -6 && ball.position.z > -9 &&
+        Math.abs(ball.position.x - bat.position.x) < 1.5 &&
+        ball.position.y < 1.5 && ball.position.y > 0) {
         
         hitBall();
     }
