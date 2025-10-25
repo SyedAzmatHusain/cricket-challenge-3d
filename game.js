@@ -132,13 +132,17 @@ function init() {
     boundary.position.y = 0.3;
     scene.add(boundary);
     
-    document.getElementById('status').textContent = 'Press SPACE to bowl! 🏏';
+    document.getElementById('status').textContent = 'Tap screen or press SPACE to bowl! 🏏';
     
     // Handle window resize
     window.addEventListener('resize', onWindowResize);
     
     // Handle keyboard input
     window.addEventListener('keydown', onKeyDown);
+
+    // Handle touch input for mobile
+    window.addEventListener('touchstart', onTouchStart);
+    window.addEventListener('click', onClick);
     
     console.log('Starting animation...');
     animate();
@@ -146,6 +150,19 @@ function init() {
 
 function onKeyDown(event) {
     if (event.code === 'Space' && !isBowling) {
+        bowlBall();
+    }
+}
+
+function onTouchStart(event) {
+    event.preventDefault();
+    if (!isBowling) {
+        bowlBall();
+    }
+}
+
+function onClick(event) {
+    if (!isBowling) {
         bowlBall();
     }
 }
@@ -161,7 +178,7 @@ function bowlBall() {
     // Animate bowler
     bowler.position.z = 6;
     
-    document.getElementById('status').textContent = '🏏 Bowling... Press SPACE for next ball';
+    document.getElementById('status').textContent = '🏏 Bowling... Touch screen or Press SPACE for next ball';
     console.log('Ball bowled!');
 }
 
