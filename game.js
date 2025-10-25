@@ -178,7 +178,7 @@ function bowlBall() {
     // Animate bowler
     bowler.position.z = 6;
     
-    document.getElementById('status').textContent = '🏏 Bowling... Touch screen or Press SPACE for next ball';
+    document.getElementById('status').textContent = '🏏 Bowling... Press SPACE for next ball';
     console.log('Ball bowled!');
 }
 
@@ -211,7 +211,7 @@ function resetBall() {
     ballVelocity = { x: 0, y: 0, z: 0 };
     isBowling = false;
     bowler.position.z = 7;
-    document.getElementById('status').textContent = 'Press SPACE to bowl! 🏏';
+    document.getElementById('status').textContent = 'Touch screen or Press SPACE to bowl! 🏏';
     console.log('Ball reset');
 }
 
