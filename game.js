@@ -1,13 +1,20 @@
-// Cricket Challenge 3D - Phase 2: Bowling Mechanics
+// Cricket Challenge 3D - Phase 3: Batting Mechanics
 let scene, camera, renderer;
-let ball, bowler, batsman;
+let ball, bowler, batsman, bat;
 let ballVelocity = { x: 0, y: 0, z: 0 };
 let isBowling = false;
 let ballStartPos = { x: 0, y: 1.5, z: 7 };
+let score = 0;
+let balls = 0;
+
+// Batting controls
+let touchStartX = 0;
+let touchStartY = 0;
+let isSwinging = false;
+let batRotation = 0;
 
 function init() {
     console.log('Starting init...');
-    document.getElementById('status').textContent = 'Creating scene...';
     
     // Create scene
     scene = new THREE.Scene();
@@ -28,9 +35,7 @@ function init() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
     
-    document.getElementById('status').textContent = 'Adding lights...';
-    
-    // Simple bright lighting
+    // Lighting
     const light1 = new THREE.DirectionalLight(0xffffff, 1);
     light1.position.set(10, 10, 10);
     scene.add(light1);
@@ -41,8 +46,6 @@ function init() {
     
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
-    
-    document.getElementById('status').textContent = 'Creating field...';
     
     // Green field
     const fieldGeometry = new THREE.PlaneGeometry(100, 100);
@@ -73,8 +76,6 @@ function init() {
     bowlingCrease.position.set(0, 0.21, 8);
     scene.add(bowlingCrease);
     
-    document.getElementById('status').textContent = 'Creating stumps...';
-    
     // White stumps at batting end
     for (let i = -1; i <= 1; i++) {
         const stumpGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.7, 8);
@@ -93,13 +94,11 @@ function init() {
         scene.add(stump);
     }
     
-    document.getElementById('status').textContent = 'Creating players...';
-    
     // Blue batsman
     const batsmanGeometry = new THREE.BoxGeometry(0.6, 1.5, 0.4);
     const batsmanMaterial = new THREE.MeshBasicMaterial({ color: 0x0000FF });
     batsman = new THREE.Mesh(batsmanGeometry, batsmanMaterial);
-    batsman.position.set(1, 1, -8);
+    batsman.position.set(0.8, 1, -8);
     scene.add(batsman);
     
     // Red bowler
@@ -109,19 +108,19 @@ function init() {
     bowler.position.set(0, 1, 7);
     scene.add(bowler);
     
-    // Red cricket ball (LARGER AND BRIGHTER)
-    const ballGeometry = new THREE.SphereGeometry(0.25, 16, 16);
+    // Red cricket ball (LARGE AND VISIBLE)
+    const ballGeometry = new THREE.SphereGeometry(0.3, 16, 16);
     const ballMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000 });
     ball = new THREE.Mesh(ballGeometry, ballMaterial);
     ball.position.set(ballStartPos.x, ballStartPos.y, ballStartPos.z);
     scene.add(ball);
-    console.log('Ball added at', ball.position);
     
     // Brown bat
-    const batGeometry = new THREE.BoxGeometry(0.15, 0.08, 1);
+    const batGeometry = new THREE.BoxGeometry(0.15, 0.08, 1.2);
     const batMaterial = new THREE.MeshBasicMaterial({ color: 0x8B4513 });
-    const bat = new THREE.Mesh(batGeometry, batMaterial);
-    bat.position.set(1.5, 0.7, -8);
+    bat = new THREE.Mesh(batGeometry, batMaterial);
+    bat.position.set(1.3, 0.7, -7.8);
+    bat.rotation.x = Math.PI / 6;
     scene.add(bat);
     
     // Boundary rope
@@ -132,53 +131,92 @@ function init() {
     boundary.position.y = 0.3;
     scene.add(boundary);
     
-    document.getElementById('status').textContent = 'Tap screen or press SPACE to bowl! 🏏';
+    updateStatus();
     
-    // Handle window resize
+    // Event listeners
     window.addEventListener('resize', onWindowResize);
-    
-    // Handle keyboard input
     window.addEventListener('keydown', onKeyDown);
-
-    // Handle touch input for mobile
-    window.addEventListener('touchstart', onTouchStart);
-    window.addEventListener('click', onClick);
+    window.addEventListener('touchstart', onTouchStart, { passive: false });
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend', onTouchEnd);
     
     console.log('Starting animation...');
     animate();
 }
 
-function onKeyDown(event) {
-    if (event.code === 'Space' && !isBowling) {
-        bowlBall();
-    }
+function updateStatus() {
+    document.getElementById('status').innerHTML = 
+        `<h2>Cricket Challenge 3D</h2>
+        <p>Score: ${score} runs | Balls: ${balls}</p>
+        <p>🏏 Swipe UP to hit! | Tap bottom to bowl</p>`;
 }
 
 function onTouchStart(event) {
+    touchStartX = event.touches[0].clientX;
+    touchStartY = event.touches[0].clientY;
+}
+
+function onTouchMove(event) {
     event.preventDefault();
-    if (!isBowling) {
+}
+
+function onTouchEnd(event) {
+    if (!event.changedTouches[0]) return;
+    
+    const touchEndX = event.changedTouches[0].clientX;
+    const touchEndY = event.changedTouches[0].clientY;
+    
+    const deltaX = touchEndX - touchStartX;
+    const deltaY = touchEndY - touchStartY;
+    
+    // Swipe up to bat
+    if (deltaY < -50 && Math.abs(deltaX) < 100) {
+        swingBat();
+    }
+    // Tap bottom area to bowl
+    else if (touchStartY > window.innerHeight * 0.7 && !isBowling) {
         bowlBall();
     }
 }
 
-function onClick(event) {
-    if (!isBowling) {
+function onKeyDown(event) {
+    if (event.code === 'Space' && !isBowling) {
         bowlBall();
+    } else if (event.code === 'ArrowUp' || event.code === 'KeyW') {
+        swingBat();
     }
+}
+
+function swingBat() {
+    if (isSwinging) return;
+    
+    isSwinging = true;
+    batRotation = 0;
+    console.log('Bat swung!');
+    
+    // Reset swing after animation
+    setTimeout(() => {
+        isSwinging = false;
+    }, 300);
 }
 
 function bowlBall() {
+    if (isBowling) return;
+    
     isBowling = true;
+    balls++;
     
-    // Bowl towards the batsman
-    ballVelocity.x = 0;
-    ballVelocity.y = -0.02; // Slight drop
-    ballVelocity.z = -0.5;  // Speed towards batsman
+    // Random line and length
+    const randomX = (Math.random() - 0.5) * 0.8;
+    const randomSpeed = 0.4 + Math.random() * 0.3;
     
-    // Animate bowler
+    ballVelocity.x = randomX * 0.1;
+    ballVelocity.y = -0.02;
+    ballVelocity.z = -randomSpeed;
+    
     bowler.position.z = 6;
     
-    document.getElementById('status').textContent = '🏏 Bowling... Press SPACE for next ball';
+    updateStatus();
     console.log('Ball bowled!');
 }
 
@@ -190,19 +228,70 @@ function updateBall() {
     ball.position.y += ballVelocity.y;
     ball.position.z += ballVelocity.z;
     
+    // Check for bat collision
+    if (isSwinging && 
+        ball.position.z < -7 && ball.position.z > -8.5 &&
+        Math.abs(ball.position.x - bat.position.x) < 0.8 &&
+        Math.abs(ball.position.y - bat.position.y) < 0.6) {
+        
+        hitBall();
+    }
+    
     // Bounce on pitch
     if (ball.position.y < 0.3 && ball.position.z > -8 && ball.position.z < 8) {
         ball.position.y = 0.3;
-        ballVelocity.y = 0.15; // Bounce up
-        ballVelocity.z *= 0.8; // Slow down after bounce
+        ballVelocity.y = 0.15;
+        ballVelocity.z *= 0.8;
     }
     
     // Apply gravity
     ballVelocity.y -= 0.003;
     
-    // Check if ball reached batsman or went past
-    if (ball.position.z < -10 || ball.position.y < 0) {
+    // Check if ball is out of bounds
+    if (ball.position.z < -12 || ball.position.y < -2 || 
+        Math.abs(ball.position.x) > 50 || ball.position.z > 50) {
         resetBall();
+    }
+}
+
+function hitBall() {
+    console.log('SHOT!');
+    
+    // Calculate runs based on power
+    const power = Math.abs(ballVelocity.z);
+    let runs = 0;
+    
+    if (power > 0.5) {
+        runs = 6; // Six!
+        ballVelocity.z = 1.5;
+        ballVelocity.y = 0.8;
+    } else if (power > 0.4) {
+        runs = 4; // Four!
+        ballVelocity.z = 1.2;
+        ballVelocity.y = 0.3;
+    } else {
+        runs = Math.floor(Math.random() * 3) + 1; // 1, 2, or 3
+        ballVelocity.z = 0.8;
+        ballVelocity.y = 0.2;
+    }
+    
+    // Random direction
+    ballVelocity.x = (Math.random() - 0.5) * 0.5;
+    
+    score += runs;
+    updateStatus();
+    
+    console.log(`${runs} runs scored!`);
+}
+
+function updateBat() {
+    if (isSwinging) {
+        batRotation += 0.3;
+        bat.rotation.x = Math.PI / 6 - Math.sin(batRotation) * 0.8;
+        bat.position.y = 0.7 + Math.sin(batRotation) * 0.3;
+    } else {
+        bat.rotation.x = Math.PI / 6;
+        bat.position.y = 0.7;
     }
 }
 
@@ -210,16 +299,17 @@ function resetBall() {
     ball.position.set(ballStartPos.x, ballStartPos.y, ballStartPos.z);
     ballVelocity = { x: 0, y: 0, z: 0 };
     isBowling = false;
+    isSwinging = false;
     bowler.position.z = 7;
-    document.getElementById('status').textContent = 'Touch screen or Press SPACE to bowl! 🏏';
+    updateStatus();
     console.log('Ball reset');
 }
 
 function animate() {
     requestAnimationFrame(animate);
     
-    // Update ball physics
     updateBall();
+    updateBat();
     
     renderer.render(scene, camera);
 }
